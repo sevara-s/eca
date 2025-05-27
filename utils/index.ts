@@ -75,13 +75,9 @@ import swiper14 from "../public/imgs/swiper14.jpg"
 
 import dashboard from "../public/svgs/dashboard.svg"
 import project from "../public/svgs/projects.svg"
-import calendar from "../public/svgs/calendar.svg"
-// import vacations from "../public/svgs/vacation.svg"
-// import emp from "../public/svgs/emp.svg"
-// import messanger from "../public/svgs/messanger.svg"
-// import info from "../public/svgs/info.svg"
+ 
 
-export const sidebar_items: SidebarItems[] = [
+export const owner_items: SidebarItems[] = [
   {
     id: 1,
     title: "Dashboard",
@@ -94,34 +90,16 @@ export const sidebar_items: SidebarItems[] = [
     icon: project,
     path:"/xodimlar"
   },
-  {
-    id: 3,
-    title: "Calendar",
-    icon: calendar,
-    path:"/calendar"
-  },
-  // {
-  //   id: 4,
-  //   title: "Vacations",
-  //   icon: vacations,
-  //   path:"/vacations"
-  // },
-  // {
-  //   id: 5,
-  //   title: "Employees",
-  //   icon: emp,
-  //   path:"/employees"
-  // },
-  // {
-  //   id: 6,
-  //   title: "Messenger",
-  //   icon: messanger,
-  //   path:'/messenger'
-  // },
-  // {
-  //   id: 7,
-  //   title: "Info Portal",
-  //   icon: info,
-  //   path:'/info'
-  // },
+ 
+ 
 ];
+
+
+export const master_items:SidebarItems[] =[
+  {
+    id:1,
+    title:"buyurtmalarim",
+    icon:project,
+    path:"/order"
+  }
+]

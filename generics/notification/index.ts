@@ -1,8 +1,12 @@
 import { toast } from "sonner";
 
-type NotificationApiType = "register" | "login" | "error_login";
+type NotificationApiType =
+  | "register"
+  | "login"
+  | "error_login"
+  | "error_register";
 
-export  const NotificationApi = () => {
+export const NotificationApi = () => {
   const notify = (type: NotificationApiType) => {
     switch (type) {
       case "login":
@@ -13,6 +17,10 @@ export  const NotificationApi = () => {
         );
       case "register":
         return toast.success("Tizimga muvaffaqiyatli kirdingiz !");
+      case "error_register":
+        return toast.error(
+          "Tizimda xatolik email va parol to'g'riligini tekshiring !"
+        );
       default:
         break;
     }

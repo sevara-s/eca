@@ -1,63 +1,65 @@
 "use client";
-import { useState, ChangeEvent, FormEvent } from 'react';
-import { 
-  TextField, 
-  Button, 
-  Container, 
-  Typography, 
-  Paper, 
-  Link,
-  Box,
+import { useRegisterMutation } from "@/request/mutation/mutation";
+import {
   Alert,
-  Snackbar
-} from '@mui/material';
-import { useRegisterMutation } from '@/request/mutation/mutation';
+  Box,
+  Button,
+  Container,
+  Link,
+  Paper,
+  Snackbar,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { ChangeEvent, FormEvent, useState } from "react";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    ism: '',
-    familya: '',
-    telefon: '+998',
-    passport: '',
-    karta: '',
-    
+    ism: "",
+    familya: "",
+    telefon: "+998",
+    passport: "",
+    karta: "",
+    password: "",
   });
 
-  const [errors, setErrors,isLoading] = useState({
+  const [errors, setErrors] = useState({
     ism: false,
     familya: false,
     telefon: false,
     passport: false,
     karta: false,
-    password: false
+    password: false,
   });
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success'|'error'>('success');
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success",
+  );
 
-  const { mutate: register} = useRegisterMutation();
+  const { mutate: register } = useRegisterMutation();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'telefon') {
-      if (!value.startsWith('+998')) return;
+
+    if (name === "telefon") {
+      if (!value.startsWith("+998")) return;
       if (value.length > 13) return;
     }
-    
-    if (name === 'karta') {
+
+    if (name === "karta") {
       if (!/^\d*$/.test(value)) return;
       if (value.length > 16) return;
     }
-    
-    if (name === 'passport') {
+
+    if (name === "passport") {
       if (value.length > 9) return;
       if (value.length > 2 && !/^[A-Za-z]{2}\d{0,7}$/.test(value)) return;
     }
-    
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: false }));
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: false }));
   };
 
   const validateForm = () => {
@@ -68,17 +70,16 @@ export default function RegisterPage() {
       passport: !formData.passport || formData.passport.length !== 9,
       karta: !formData.karta || formData.karta.length !== 16,
     };
-    
+
     setErrors(newErrors);
     return !Object.values(newErrors).some(Boolean);
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) {
-      setSnackbarMessage('Iltimos, barcha maydonlarni toʻgʻri toʻldiring');
-      setSnackbarSeverity('error');
+      setSnackbarMessage("Iltimos, barcha maydonlarni toʻgʻri toʻldiring");
+      setSnackbarSeverity("error");
       setOpenSnackbar(true);
       return;
     }
@@ -89,7 +90,8 @@ export default function RegisterPage() {
       phoneNumber: formData.telefon,
       passportId: formData.passport.toUpperCase(),
       cardNumber: formData.karta,
-      genderTypeIndex: 0 // Consider adding a gender field
+      genderTypeIndex: 0,  
+      password: formData.password,
     };
 
     register(registrationData);
@@ -106,7 +108,7 @@ export default function RegisterPage() {
           <Typography variant="h5" align="center" gutterBottom>
             Roʻyxatdan oʻtish
           </Typography>
-          
+
           <Box component="form" onSubmit={handleSubmit} className="space-y-4">
             <TextField
               fullWidth
@@ -118,7 +120,7 @@ export default function RegisterPage() {
               error={errors.ism}
               helperText={errors.ism && "Ismni kiriting"}
             />
-            
+
             <TextField
               fullWidth
               label="Familiya"
@@ -129,7 +131,7 @@ export default function RegisterPage() {
               error={errors.familya}
               helperText={errors.familya && "Familiyani kiriting"}
             />
-            
+
             <TextField
               fullWidth
               label="Telefon raqam"
@@ -140,7 +142,7 @@ export default function RegisterPage() {
               error={errors.telefon}
               helperText={errors.telefon ? "+998901234567 formatida" : ""}
             />
-            
+
             <TextField
               fullWidth
               label="Passport seriya"
@@ -152,10 +154,10 @@ export default function RegisterPage() {
               helperText={errors.passport ? "AA1234567 formatida" : ""}
               inputProps={{
                 maxLength: 9,
-                style: { textTransform: 'uppercase' }
+                style: { textTransform: "uppercase" },
               }}
             />
-            
+
             <TextField
               fullWidth
               label="Karta raqami"
@@ -168,21 +170,28 @@ export default function RegisterPage() {
               inputProps={{ maxLength: 16 }}
             />
 
-         
-            
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              error={errors.password}
+            />
+
             <Button
               fullWidth
               type="submit"
               variant="contained"
               size="large"
               className="mt-4"
-              disabled={isLoading}
             >
-              {isLoading ? 'Yuklanmoqda...' : 'Roʻyxatdan oʻtish'}
+              Roʻyxatdan oʻtish
             </Button>
-            
+
             <Typography align="center" className="mt-4">
-              Allaqachon roʻyxatdan oʻtganmisiz?{' '}
+              Allaqachon roʻyxatdan oʻtganmisiz?{" "}
               <Link href="/login" underline="hover">
                 Tizimga kirish
               </Link>
@@ -195,7 +204,7 @@ export default function RegisterPage() {
         open={openSnackbar}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
           {snackbarMessage}

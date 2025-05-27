@@ -1,19 +1,19 @@
 "use client";
-import { useState, ChangeEvent, FormEvent } from 'react';
-import { 
-  TextField, 
-  Button, 
-  Container, 
-  Typography, 
-  Paper, 
-  InputAdornment, 
-  IconButton,
-  Link,
+import { useLoginMutation } from "@/request/mutation/mutation";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {
   Box,
-  CircularProgress
-} from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useLoginMutation } from '@/request/mutation/mutation';
+  Button,
+  CircularProgress,
+  Container,
+  IconButton,
+  InputAdornment,
+  Link,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { ChangeEvent, FormEvent, useState } from "react";
 
 type FormData = {
   telefon: string;
@@ -28,62 +28,46 @@ type FormErrors = {
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    telefon: '+998',
-    parol: ''
+    telefon: "+998",
+    parol: "",
   });
-  const [errors, setErrors] = useState<FormErrors>({
+  const [errors] = useState<FormErrors>({
     telefon: false,
-    parol: false
+    parol: false,
   });
-  
+
   const loginMutation = useLoginMutation();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'telefon') {
-      if (!value.startsWith('+998')) {
-        setFormData(prev => ({ ...prev, [name]: '+998' }));
-        return;
-      }
-      if (value.length > 13) return;
-    }
-    
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
 
-  const validatePhone = (phone: string): boolean => {
-    return /^\+998\d{9}$/.test(phone);
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
-    const newErrors = {
-      telefon: !validatePhone(formData.telefon),
-      parol: formData.parol.trim() === ''
-    };
 
-    setErrors(newErrors);
-
-    if (!Object.values(newErrors).some(error => error)) {
-       
-      const username = formData.telefon;  
-      loginMutation.mutate({
-        username: username,  
-        password: formData.parol
-      });
-    }
+    const username = formData.telefon;
+    console.log(username, formData.parol);
+    loginMutation.mutate({
+      username: username,
+      password: formData.parol,
+    });
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Container maxWidth="sm" className="!py-8">
         <Paper elevation={3} className="p-6 rounded-lg">
-          <Typography variant="h4" align="center" gutterBottom className="font-bold">
+          <Typography
+            variant="h4"
+            align="center"
+            gutterBottom
+            className="font-bold"
+          >
             Tizimga kirish
           </Typography>
-          
+
           <form onSubmit={handleSubmit}>
             <Box className="!flex !flex-col !gap-4">
               <TextField
@@ -94,22 +78,22 @@ export default function LoginPage() {
                 onChange={handleChange}
                 error={errors.telefon || loginMutation.isError}
                 helperText={
-                  errors.telefon 
-                    ? "+998901234567 formatida kiriting" 
-                    : loginMutation.isError 
-                      ? "Telefon yoki parol noto'g'ri" 
-                      : ""
+                  errors.telefon
+                    ? "+998901234567 formatida kiriting"
+                    : loginMutation.isError
+                    ? "Telefon yoki parol noto'g'ri"
+                    : ""
                 }
                 required
                 className="bg-white"
                 disabled={loginMutation.isPending}
               />
-              
+
               <TextField
                 fullWidth
                 label="Parol"
                 name="parol"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={formData.parol}
                 onChange={handleChange}
                 error={errors.parol || loginMutation.isError}
@@ -132,7 +116,7 @@ export default function LoginPage() {
                   ),
                 }}
               />
-              
+
               <Button
                 fullWidth
                 type="submit"
@@ -144,14 +128,18 @@ export default function LoginPage() {
                 {loginMutation.isPending ? (
                   <CircularProgress size={24} color="inherit" />
                 ) : (
-                  'Kirish'
+                  "Kirish"
                 )}
               </Button>
-              
-              <Typography variant="body2" align="center" className="mt-4 text-gray-600">
-                Hali ro&apos;yxatdan o&apos;tmaganmisiz?{' '}
-                <Link 
-                  href="/register" 
+
+              <Typography
+                variant="body2"
+                align="center"
+                className="mt-4 text-gray-600"
+              >
+                Hali ro&apos;yxatdan o&apos;tmaganmisiz?{" "}
+                <Link
+                  href="/register"
                   underline="hover"
                   className="text-blue-600 hover:text-blue-800 cursor-pointer"
                 >
@@ -162,6 +150,6 @@ export default function LoginPage() {
           </form>
         </Paper>
       </Container>
-    </div> 
+    </div>
   );
 }

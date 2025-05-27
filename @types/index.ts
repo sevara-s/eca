@@ -5,3 +5,12 @@ export interface SidebarItems {
     path:string,
 
 }
+
+export type AccountType = 'MASTER' | 'OWNER' | string
+export interface UserData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  accountType: AccountType;  
+  employeeId?: string;
+}
