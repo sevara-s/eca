@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* body{
+  background: #000;
+} */
+
+ @media (min-width: 1450px) {
+  .container {
+    width: 1450px;
+    margin: 0 auto;
+  }
+}
+.container2 {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: 12px;
+  min-height: calc(100vh - 180px);
+}
