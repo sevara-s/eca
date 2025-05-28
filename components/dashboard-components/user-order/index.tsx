@@ -1,6 +1,6 @@
 "use client"
 import { request } from "@/request";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import jwt from "jsonwebtoken";
 import Image from "next/image";
@@ -46,6 +46,45 @@ export default function UserOrderList() {
     enabled: !!employeeId  
   });
 
+  const { mutate: createOrder, isLoading: isCreating } = useMutation({
+    mutationFn: async (orderData: {
+      productName: string;
+      productSeriaNumber: string;
+      employeeId: number;
+      address: {
+        region: string;
+        city: string;
+        street: string;
+        district?: string;
+        home?: string;
+      };
+    }) => {
+      const response = await request.post("/booking-product", {
+        id: 0, // Server will generate
+        ...orderData,
+        address: {
+          id: 0, // Server will generate
+          ...orderData.address,
+          bookingProductId: 0 // Will be set by server
+        },
+        productFileList: []
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("token")}`
+        }
+      });
+      return response.data.content;
+    },
+    onSuccess: () => {
+      refetch();
+      setIsModalOpen(false);
+    },
+    onError: (error) => {
+      console.error("Order creation failed:", error);
+    }
+  });
+
   if (isLoading) return <OrderListSkeleton />;
   if (isError) return <ErrorDisplay error={error} />;
 
@@ -75,10 +114,8 @@ export default function UserOrderList() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         employeeId={employeeId}
-        onSuccess={() => {
-          setIsModalOpen(false);
-          refetch();
-        }}
+        onSubmit={createOrder}
+        isSubmitting={isCreating}
       />
     </div>
   );
@@ -89,10 +126,12 @@ function OrderCard({ order, onRefetch }: { order: any, onRefetch: () => void }) 
   const [isEditing, setIsEditing] = useState(false);
 
   const handleDelete = async () => {
-    // TODO: Implement delete functionality
-    console.log("Delete order", order.id);
-    // await request.delete(`/booking-product/${order.id}`);
-    // onRefetch();
+    try {
+      await request.delete(`/booking-product/${order.id}`);
+      onRefetch();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
   };
 
   return (
@@ -198,13 +237,35 @@ function OrderCard({ order, onRefetch }: { order: any, onRefetch: () => void }) 
   );
 }
 
-function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: { 
+function NewOrderModal({ 
+  isOpen, 
+  onClose, 
+  employeeId,
+  onSubmit,
+  isSubmitting
+}: { 
   isOpen: boolean, 
   onClose: () => void, 
   employeeId: number | null,
-  onSuccess: () => void
+  onSubmit: (data: any) => void,
+  isSubmitting: boolean
 }) {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+  const productOptions = [
+    "WT-150",
+    "WT-125", 
+    "WT-110",
+    "WT-100",
+    "WT-SS 65",
+    "WT-SS 55",
+    "WT-SS 45"
+  ];
+
+  const { 
+    register, 
+    handleSubmit, 
+    reset,
+    formState: { errors } 
+  } = useForm({
     defaultValues: {
       productName: "",
       productSeriaNumber: "",
@@ -212,81 +273,18 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
       city: "",
       district: "",
       street: "",
-      home: "",
-      files: [] as File[]
+      home: ""
     }
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{
-    file: File,
-    preview: string
-  }>>([]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map(file => ({
-        file,
-        preview: URL.createObjectURL(file)
-      }));
-      setUploadedFiles(prev => [...prev, ...newFiles]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    const newFiles = [...uploadedFiles];
-    URL.revokeObjectURL(newFiles[index].preview);
-    newFiles.splice(index, 1);
-    setUploadedFiles(newFiles);
-  };
-
-  const onSubmit = async (data: any) => {
+  const submitHandler = (data: any) => {
     if (!employeeId) return;
-
-    try {
-      const formData = new FormData();
-      formData.append("productName", data.productName);
-      formData.append("productSeriaNumber", data.productSeriaNumber);
-      formData.append("employeeId", employeeId.toString());
-      
-      // Add address
-      formData.append("address[region]", data.region);
-      formData.append("address[city]", data.city);
-      formData.append("address[district]", data.district);
-      formData.append("address[street]", data.street);
-      formData.append("address[home]", data.home);
-      
-      // Add files
-      uploadedFiles.forEach(file => {
-        formData.append("files", file.file);
-      });
-
-      // TODO: Uncomment when API is ready
-      // await request.post("/booking-product/create", formData, {
-      //   headers: {
-      //     "Content-Type": "multipart/form-data"
-      //   }
-      // });
-
-      console.log("Order data:", {
-        productName: data.productName,
-        productSeriaNumber: data.productSeriaNumber,
-        employeeId,
-        address: {
-          region: data.region,
-          city: data.city,
-          district: data.district,
-          street: data.street,
-          home: data.home
-        },
-        files: uploadedFiles
-      });
-
-      onSuccess();
-      reset();
-      setUploadedFiles([]);
-    } catch (error) {
-      console.error("Error creating order:", error);
-    }
+    
+    onSubmit({
+      ...data,
+      employeeId
+    });
+    reset();
   };
 
   if (!isOpen) return null;
@@ -304,7 +302,7 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(submitHandler)}>
             <div className="space-y-4">
               {/* Product Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,11 +310,17 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Product Name *
                   </label>
-                  <input
+                  <select
                     {...register("productName", { required: "Product name is required" })}
-                    type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  >
+                    <option value="">Select a product</option>
+                    {productOptions.map((product) => (
+                      <option key={product} value={product}>
+                        {product}
+                      </option>
+                    ))}
+                  </select>
                   {errors.productName && (
                     <p className="mt-1 text-sm text-red-600">{errors.productName.message}</p>
                   )}
@@ -330,6 +334,7 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
                     {...register("productSeriaNumber", { required: "Serial number is required" })}
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter serial number"
                   />
                   {errors.productSeriaNumber && (
                     <p className="mt-1 text-sm text-red-600">{errors.productSeriaNumber.message}</p>
@@ -350,6 +355,7 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
                       {...register("region", { required: "Region is required" })}
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter region"
                     />
                     {errors.region && (
                       <p className="mt-1 text-sm text-red-600">{errors.region.message}</p>
@@ -364,6 +370,7 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
                       {...register("city", { required: "City is required" })}
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter city"
                     />
                     {errors.city && (
                       <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
@@ -378,6 +385,7 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
                       {...register("district")}
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter district"
                     />
                   </div>
 
@@ -389,6 +397,7 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
                       {...register("street", { required: "Street is required" })}
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter street"
                     />
                     {errors.street && (
                       <p className="mt-1 text-sm text-red-600">{errors.street.message}</p>
@@ -403,79 +412,10 @@ function NewOrderModal({ isOpen, onClose, employeeId, onSuccess }: {
                       {...register("home")}
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter home number"
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* File Upload */}
-              <div className="border-t border-gray-200 pt-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Attachments</h3>
-                
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <input
-                    type="file"
-                    id="file-upload"
-                    multiple
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className="cursor-pointer flex flex-col items-center justify-center space-y-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <span className="text-sm text-gray-600">
-                      <span className="font-medium text-blue-600 hover:text-blue-500">
-                        Click to upload
-                      </span>{' '}
-                      or drag and drop
-                    </span>
-                    <span className="text-xs text-gray-500">Images up to 10MB</span>
-                  </label>
-                </div>
-
-                {/* Preview uploaded files */}
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Selected files:</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="relative group">
-                          <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
-                            {file.file.type.startsWith('image/') ? (
-                              <img
-                                src={file.preview}
-                                alt={file.file.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-                          </div>
-                          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                            <button
-                              type="button"
-                              onClick={() => removeFile(index)}
-                              className="text-white hover:text-red-300"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                          <p className="mt-1 text-xs text-gray-600 truncate">{file.file.name}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 

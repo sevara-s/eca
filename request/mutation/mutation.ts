@@ -6,6 +6,26 @@ import { useRouter } from "next/navigation";
 import { request } from "..";
 import type { UserData } from "@/@types";
 
+interface NewOrderData {
+  productName: string;
+  productSeriaNumber: string;
+  employeeId: number;
+  address: {
+    region: string;
+    city: string;
+    street: string;
+    district?: string;
+    home?: string;
+  };
+  productFileList?: Array<{
+    contentUrl: string;
+    originalName: string;
+    generatedName: string;
+    mimeType: string;
+    size: number;
+  }>;
+}
+
 export const useRegisterMutation = () => {
   const router = useRouter();
   const notify = NotificationApi();
@@ -200,5 +220,45 @@ export const useEmployeeEdit = () => {
 //   });
 // };
 
+export const useAddNewOrder = () => {
+  const queryClient = useQueryClient();
+  const notify = NotificationApi();
 
-// export const useAddNewOrder ()
+  return useMutation({
+    mutationKey: ["add-order"],
+    mutationFn: async (orderData: NewOrderData) => {
+      const token = Cookies.get("token");
+      if (!token) throw new Error("Authentication required");
+
+      const response = await request.post(
+        "/booking-product",
+        {
+          id: 0, // Server will generate
+          ...orderData,
+          address: {
+            id: 0, // Server will generate
+            ...orderData.address,
+            bookingProductId: 0 // Will be set by server
+          },
+          productFileList: orderData.productFileList || []
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      return response.data.content;
+    },
+    onSuccess: () => {
+      notify("add-order");
+      queryClient.invalidateQueries({ queryKey: ["user-orders"] });  
+    },
+    onError: (error: Error) => {
+      console.error("Order creation failed:", error);
+      notify("error-order");
+    }
+  });
+};

@@ -10,7 +10,9 @@ type NotificationApiType =
   | "edit-admin"
   | "error-edit"
   | "add-employee"
-  | "error";
+  | "error"
+  | "add-order"
+  | "error-order";
 
 export const NotificationApi = () => {
   const notify = (type: NotificationApiType) => {
@@ -39,6 +41,10 @@ export const NotificationApi = () => {
         return toast.success("Xodim muvaffaqiyatli qo'shildi")
       case "error":
         return toast.error("Nimadadir xatolik ketdi , qayta urinib ko'ring")
+      case "add-order":
+        return toast.success("Buyurtma muvaffaqiyatli qo'shildi. 2 ish kuni davomida sizga qo'ng'iroq qilishadi")
+      case "error-order":
+        return toast.error("Buyurtma qo'shishda xatolik")
       default:
         break;
     }
