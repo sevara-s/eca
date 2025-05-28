@@ -1,7 +1,6 @@
 "use client";
 import {
   Avatar,
-  Badge,
   Button,
   IconButton,
   InputBase,
@@ -12,7 +11,6 @@ import {
 } from "@mui/material";
 import {
   Search as SearchIcon,
-  Notifications as NotificationsIcon,
   PersonOutline as PersonOutlineIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
 } from "@mui/icons-material";
@@ -80,11 +78,7 @@ export default function Header() {
       </Paper>
 
       <Stack direction="row" spacing={2} alignItems="center">
-        <Badge badgeContent={5} color="error">
-          <IconButton aria-label="notifications">
-            <NotificationsIcon />
-          </IconButton>
-        </Badge>
+     
 
         <Button
           id="profile-button"
