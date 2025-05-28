@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { owner_items, master_items } from "@/utils"; 
+import { admin_items, xodim_items } from "@/utils"; 
 import Cookies from "js-cookie";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,8 +41,8 @@ export default function Sidebar() {
 
    
   const getMenuItems = () => {
-    if (accountType === "MASTER") return master_items;
-    if (accountType === "OWNER") return owner_items;
+    if (accountType === "MASTER") return xodim_items;
+    if (accountType === "OWNER") return admin_items;
     return [];  
   };
 

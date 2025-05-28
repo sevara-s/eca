@@ -23,6 +23,11 @@ import {
   MenuItem,
   Checkbox,
   FormControlLabel,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import {
   Edit,
@@ -34,6 +39,11 @@ import {
   ArrowDropDown,
 } from "@mui/icons-material";
 import { useState, useEffect } from "react";
+import {
+  useDeleteEmployeeMutation,
+  useEmployeeEdit,
+} from "@/request/mutation/mutation";
+import { NotificationApi } from "@/generics/notification";
 
 interface Employee {
   id: number;
@@ -51,9 +61,17 @@ interface EmployeeResponse {
 export default function EmployeeList() {
   const theme = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(
+    null
+  );
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [filteredData, setFilteredData] = useState<Employee[]>([]);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
+    null
+  );
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
 
   const { data, isLoading, isError } = useQuery<EmployeeResponse>({
     queryKey: ["xodimlar"],
@@ -62,6 +80,8 @@ export default function EmployeeList() {
       return res.data ?? { content: [] };
     },
   });
+
+  const deleteMutation = useDeleteEmployeeMutation();
 
   useEffect(() => {
     if (data?.content) {
@@ -107,6 +127,47 @@ export default function EmployeeList() {
     );
   };
 
+  const handleDeleteClick = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (employeeToDelete) {
+      deleteMutation.mutate(employeeToDelete.id);
+      setDeleteModalOpen(false);
+      setEmployeeToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false);
+    setEmployeeToDelete(null);
+  };
+
+  const handleEditClick = (employee: Employee) => {
+    setCurrentEmployee(employee);
+    setEditModalOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditModalOpen(false);
+    setCurrentEmployee(null);
+  };
+
+  const editMutation = useEmployeeEdit();
+  const handleSaveEdit = () => {
+    const notify = NotificationApi()
+    if (currentEmployee) {
+      editMutation.mutate(currentEmployee, {
+        onSuccess: () => {
+          notify("edit-admin")
+          handleEditClose();
+          
+        },
+      });
+    }
+  };
   if (isError)
     return (
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -127,6 +188,108 @@ export default function EmployeeList() {
 
   return (
     <Box sx={{ p: 4, pt: 0 }}>
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={deleteModalOpen}
+        onClose={handleCancelDelete}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Xodimni o'chirishni tasdiqlaysizmi?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {employeeToDelete && (
+              <>
+                <strong>
+                  {employeeToDelete.firstName} {employeeToDelete.lastName}
+                </strong>{" "}
+                ismli xodimni ro'yxatdan o'chirishni tasdiqlaysizmi?
+                <br />
+                Bu amalni ortga qaytarib bo'lmaydi.
+              </>
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Bekor qilish
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            autoFocus
+            disabled={deleteMutation.isLoading}
+          >
+            {deleteMutation.isLoading ? "O'chirilmoqda..." : "O'chirish"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Employee Modal */}
+      <Dialog
+        open={editModalOpen}
+        onClose={handleEditClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {currentEmployee
+            ? `Tahrirlash: ${currentEmployee.firstName} ${currentEmployee.lastName}`
+            : "Xodimni tahrirlash"}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Ism"
+              value={currentEmployee?.firstName || ""}
+              onChange={(e) =>
+                setCurrentEmployee((prev) =>
+                  prev ? { ...prev, firstName: e.target.value } : null
+                )
+              }
+            />
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Familiya"
+              value={currentEmployee?.lastName || ""}
+              onChange={(e) =>
+                setCurrentEmployee((prev) =>
+                  prev ? { ...prev, lastName: e.target.value } : null
+                )
+              }
+            />
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Telefon raqam"
+              value={currentEmployee?.phoneNumber || ""}
+              onChange={(e) =>
+                setCurrentEmployee((prev) =>
+                  prev ? { ...prev, phoneNumber: e.target.value } : null
+                )
+              }
+            />
+            {/* Add more fields as needed */}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Bekor qilish</Button>
+          <Button
+            onClick={handleSaveEdit}
+            color="primary"
+            variant="contained"
+            disabled={!currentEmployee}
+          >
+            Saqlash
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Box
         sx={{
           zIndex: 1100,
@@ -426,6 +589,7 @@ export default function EmployeeList() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
+                      onClick={() => handleEditClick(em)}
                       sx={{
                         mr: 1,
                         bgcolor: theme.palette.primary.light,
@@ -436,6 +600,7 @@ export default function EmployeeList() {
                     </IconButton>
                     <IconButton
                       size="small"
+                      onClick={() => handleDeleteClick(em)}
                       sx={{
                         bgcolor: theme.palette.error.light,
                         "&:hover": { bgcolor: theme.palette.error.main },

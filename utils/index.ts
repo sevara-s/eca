@@ -73,33 +73,35 @@ import swiper14 from "../public/imgs/swiper14.jpg"
   },
 ];
 
-import dashboard from "../public/svgs/dashboard.svg"
+// import dashboard from "../public/svgs/dashboard.svg"
 import project from "../public/svgs/projects.svg"
  
 
-export const owner_items: SidebarItems[] = [
-  {
-    id: 1,
-    title: "Dashboard",
-    icon: dashboard,
-    path:"/dashboard"
-  },
+export const admin_items: SidebarItems[] = [
+ 
   {
     id: 2,
     title: "Xodimlar",
     icon: project,
     path:"/xodimlar"
   },
+    {
+    id:3,
+    title:"buyurtmalar",
+    icon:project,
+    path:"/order"
+  },
  
  
 ];
 
 
-export const master_items:SidebarItems[] =[
-  {
-    id:1,
-    title:"buyurtmalarim",
+export const xodim_items:SidebarItems[] =[
+
+    {
+    id:2,
+    title:"buyurtmalar",
     icon:project,
-    path:"/order"
-  }
+    path:"/new_order"
+  },
 ]
