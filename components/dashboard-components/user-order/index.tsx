@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { request } from "@/request";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Cookies from "js-cookie";
@@ -7,14 +7,57 @@ import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+// Define types for our data structures
+type Address = {
+  id?: number;
+  region: string;
+  city: string;
+  street: string;
+  district?: string;
+  home?: string;
+  bookingProductId?: number;
+};
+
+type ProductFile = {
+  id: number;
+  originalName: string;
+  contentUrl: string;
+};
+
+type Order = {
+  id: number;
+  productName: string;
+  productSeriaNumber: string;
+  employeeId: number;
+  address: Address;
+  productFileList: ProductFile[];
+};
+
+type OrderFormData = {
+  productName: string;
+  productSeriaNumber: string;
+  region: string;
+  city: string;
+  district?: string;
+  street: string;
+  home?: string;
+};
+
+type DecodedToken = {
+  sub?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+};
+
 export default function UserOrderList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const getEmployeeIdFromToken = () => {
+
+  const getEmployeeIdFromToken = (): number | null => {
     const token = Cookies.get("token");
     if (!token) return null;
 
     try {
-      const decoded: any = jwt.decode(token);
+      const decoded = jwt.decode(token) as DecodedToken;
       const sub = decoded?.sub;
 
       if (!sub) return null;
@@ -29,7 +72,13 @@ export default function UserOrderList() {
 
   const employeeId = getEmployeeIdFromToken();
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    error, 
+    refetch 
+  } = useQuery<Order[], Error>({
     queryKey: ["user-orders", employeeId],
     queryFn: async () => {
       if (!employeeId) {
@@ -51,13 +100,7 @@ export default function UserOrderList() {
       productName: string;
       productSeriaNumber: string;
       employeeId: number;
-      address: {
-        region: string;
-        city: string;
-        street: string;
-        district?: string;
-        home?: string;
-      };
+      address: Omit<Address, 'id' | 'bookingProductId'>;
     }) => {
       const response = await request.post("/booking-product", {
         id: 0, // Server will generate
@@ -80,7 +123,7 @@ export default function UserOrderList() {
       refetch();
       setIsModalOpen(false);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Order creation failed:", error);
     }
   });
@@ -121,7 +164,7 @@ export default function UserOrderList() {
   );
 }
 
-function OrderCard({ order, onRefetch }: { order: any, onRefetch: () => void }) {
+function OrderCard({ order, onRefetch }: { order: Order; onRefetch: () => void }) {
   const mainImage = order.productFileList?.[0]?.contentUrl;
   const [isEditing, setIsEditing] = useState(false);
 
@@ -177,6 +220,7 @@ function OrderCard({ order, onRefetch }: { order: any, onRefetch: () => void }) 
             alt={order.productName}
             fill
             className="object-cover"
+            priority={false}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -215,7 +259,7 @@ function OrderCard({ order, onRefetch }: { order: any, onRefetch: () => void }) 
           <div className="mt-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Attachments</h3>
             <div className="flex flex-wrap gap-2">
-              {order.productFileList.map((file: any) => (
+              {order.productFileList.map((file) => (
                 <a 
                   key={file.id} 
                   href={file.contentUrl} 
@@ -244,11 +288,16 @@ function NewOrderModal({
   onSubmit,
   isSubmitting
 }: { 
-  isOpen: boolean, 
-  onClose: () => void, 
-  employeeId: number | null,
-  onSubmit: (data: any) => void,
-  isSubmitting: boolean
+  isOpen: boolean; 
+  onClose: () => void; 
+  employeeId: number | null;
+  onSubmit: (data: {
+    productName: string;
+    productSeriaNumber: string;
+    employeeId: number;
+    address: Omit<Address, 'id' | 'bookingProductId'>;
+  }) => void;
+  isSubmitting: boolean;
 }) {
   const productOptions = [
     "WT-150",
@@ -265,24 +314,22 @@ function NewOrderModal({
     handleSubmit, 
     reset,
     formState: { errors } 
-  } = useForm({
-    defaultValues: {
-      productName: "",
-      productSeriaNumber: "",
-      region: "",
-      city: "",
-      district: "",
-      street: "",
-      home: ""
-    }
-  });
+  } = useForm<OrderFormData>();
 
-  const submitHandler = (data: any) => {
+  const submitHandler = (data: OrderFormData) => {
     if (!employeeId) return;
     
     onSubmit({
-      ...data,
-      employeeId
+      productName: data.productName,
+      productSeriaNumber: data.productSeriaNumber,
+      employeeId,
+      address: {
+        region: data.region,
+        city: data.city,
+        district: data.district,
+        street: data.street,
+        home: data.home
+      }
     });
     reset();
   };
@@ -485,7 +532,7 @@ function OrderListSkeleton() {
   );
 }
 
-function ErrorDisplay({ error }: { error: any }) {
+function ErrorDisplay({ error }: { error: Error }) {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
@@ -535,7 +582,7 @@ function EmptyState({ onAddNew }: { onAddNew: () => void }) {
         </svg>
         <h3 className="mt-2 text-lg font-medium text-gray-900">No orders found</h3>
         <p className="mt-1 text-sm text-gray-500">
-          You haven't placed any orders yet. When you do, they'll appear here.
+          You haven&apos;t placed any orders yet. When you do, they&apos;ll appear here.
         </p>
         <div className="mt-6">
           <button

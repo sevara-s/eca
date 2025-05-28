@@ -16,58 +16,15 @@ import {
   PersonOutline as PersonOutlineIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
 } from "@mui/icons-material";
-import { useState, MouseEvent, useEffect } from "react";
+import { useState, MouseEvent } from "react";
 import Cookies from "js-cookie";
-import jwt from "jsonwebtoken";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [userName, setUserName] = useState<string>("");
+  const [userName] = useState<string>("John Doe");  
   const open = Boolean(anchorEl);
   const router = useRouter();
-
-useEffect(() => {
-  const getUserNameFromStorage = () => {
-    // Get token from localStorage or cookies
-    const token = localStorage.getItem("token") || Cookies.get("token");
-
-    if (token) {
-      try {
-        const decoded: any = jwt.decode(token);
-        if (decoded) {
-          return extractName(decoded);
-        }
-      } catch (error) {
-        console.error("Error decoding JWT:", error);
-      }
-    }
-
-    // No valid token found, redirect
-    router.push("/login");
-    return "User";
-  };
-
-  const extractName = (data: any) => {
-    if (data.firstName && data.lastName) {
-      return `${data.firstName} ${data.lastName}`;
-    }
-    if (data.name) {
-      return data.name;
-    }
-    if (data.username) {
-      return data.username;
-    }
-    if (data.sub) {
-      return data.sub;
-    }
-    return "User";
-  };
-
-  const name = getUserNameFromStorage();
-  setUserName(name);
-}, [router]);
-
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -77,13 +34,10 @@ useEffect(() => {
     setAnchorEl(null);
   };
 
-  // Add logout functionality
   const handleLogout = () => {
-    // Clear storage
     localStorage.removeItem("token");
     Cookies.remove("token");
     Cookies.remove("user");
-    // Redirect to login
     router.push("/login");
     handleClose();
   };
@@ -93,7 +47,7 @@ useEffect(() => {
       direction="row"
       justifyContent="space-between"
       alignItems="center"
-      style={{
+      sx={{
         width: "100%",
         backgroundColor: "#f4f9fd",
         height: "64px",
@@ -103,9 +57,8 @@ useEffect(() => {
         zIndex: 10,
       }}
     >
-      {/* Search bar (unchanged) */}
       <Paper
-        style={{
+        sx={{
           padding: "2px 4px",
           display: "flex",
           alignItems: "center",
@@ -116,11 +69,11 @@ useEffect(() => {
           border: "1px solid #e0e0e0",
         }}
       >
-        <IconButton style={{ padding: "10px" }} aria-label="search">
+        <IconButton sx={{ padding: "10px" }} aria-label="search">
           <SearchIcon />
         </IconButton>
         <InputBase
-          style={{ marginLeft: 1, flex: 1 }}
+          sx={{ marginLeft: 1, flex: 1 }}
           placeholder="Search..."
           inputProps={{ "aria-label": "search" }}
         />
@@ -140,12 +93,12 @@ useEffect(() => {
           aria-expanded={open ? "true" : undefined}
           onClick={handleClick}
           startIcon={
-            <Avatar style={{ backgroundColor: "#3f8cff" }}>
+            <Avatar sx={{ backgroundColor: "#3f8cff" }}>
               {userName ? userName.charAt(0) : <PersonOutlineIcon />}
             </Avatar>
           }
           endIcon={<KeyboardArrowDownIcon />}
-          style={{
+          sx={{
             textTransform: "none",
             color: "#000000DE",
             backgroundColor: "#ffffff",
@@ -175,10 +128,7 @@ useEffect(() => {
         >
           <MenuItem onClick={handleClose}>Profile</MenuItem>
           <MenuItem onClick={handleClose}>Settings</MenuItem>
-          <MenuItem
-            onClick={handleLogout}
-            style={{ color: "#d32f2f" }}
-          >
+          <MenuItem onClick={handleLogout} sx={{ color: "#d32f2f" }}>
             Logout
           </MenuItem>
         </Menu>
@@ -186,7 +136,3 @@ useEffect(() => {
     </Stack>
   );
 }
-
-
- 
-

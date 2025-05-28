@@ -205,9 +205,9 @@ export default function EmployeeList() {
                 <strong>
                   {employeeToDelete.firstName} {employeeToDelete.lastName}
                 </strong>{" "}
-                ismli xodimni ro'yxatdan o'chirishni tasdiqlaysizmi?
+                ismli xodimni ro&apos;yxatdan o&apos;chirishni tasdiqlaysizmi?
                 <br />
-                Bu amalni ortga qaytarib bo'lmaydi.
+                Bu amalni ortga qaytarib bo&apos;lmaydi.
               </>
             )}
           </DialogContentText>
