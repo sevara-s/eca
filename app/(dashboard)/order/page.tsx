@@ -11,8 +11,9 @@ const getOrders = async () => {
   return res.data.data;
 };
 
-const Orders = async () => {
+export default async function Page() {
   const queryClient = new QueryClient();
+
   await queryClient.prefetchQuery({
     queryKey: ["orders"],
     queryFn: getOrders,
@@ -27,6 +28,4 @@ const Orders = async () => {
       </HydrationBoundary>
     </div>
   );
-};
-
-export default Orders;
+}

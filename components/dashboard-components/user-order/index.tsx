@@ -139,7 +139,7 @@ export default function UserOrderList() {
           onClick={() => setIsModalOpen(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          + New Order
+          + Yangi buyurtmalar
         </button>
       </div>
       
@@ -195,7 +195,6 @@ function OrderCard({ order, onRefetch }: { order: Order; onRefetch: () => void }
             <button
               onClick={() => {
                 setIsEditing(false);
-                // TODO: Implement edit functionality
                 console.log("Edit order", order.id);
               }}
               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
